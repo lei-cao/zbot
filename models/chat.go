@@ -97,7 +97,10 @@ type Product struct {
 
 func getTop(r *Reply) string {
 	var urlObj *url.URL
-	topUrl := fmt.Sprintf("https://api.zalora.sg/v1/products/?limit=3&query=%s", r.Key)
+    topUrl := fmt.Sprintf("https://api.zalora.sg/v1/products/?limit=3&query=%s", r.Key)
+    if r.Key == "" {
+        topUrl = "https://api.zalora.sg/v1/products/?limit=3"
+    }
 	fmt.Println(topUrl)
 	urlObj, err := url.Parse(topUrl)
 	if err != nil {
