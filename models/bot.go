@@ -3,7 +3,6 @@ package models
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -37,7 +36,7 @@ func SendChat(msg string) {
 	urlObj.RawQuery = parameters.Encode()
 
 	//    https://aiaas.pandorabots.com/talk/APP_ID/BOTNAME?user_key=USER_KEY&input=INPUT
-    pretty.Println(urlObj.String())
+	pretty.Println(urlObj.String())
 	Post(urlObj.String())
 }
 
@@ -68,17 +67,41 @@ func Post(u string) ([]byte, error) {
 
 func Get(url string) ([]byte, error) {
 	// request http api
-	res, err := http.Get(url)
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", url, nil)
+	//	req.Header.Set("Accept", "application/json")
+
+	res, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		beego.Alert(err)
 	}
 
 	// read body
 	body, err := ioutil.ReadAll(res.Body)
-	fmt.Println(body)
 	res.Body.Close()
 	if err != nil {
-		log.Fatal(err)
+		beego.Alert(err)
+		return nil, err
+	}
+
+	return body, nil
+}
+
+func GetThrift(url string) ([]byte, error) {
+	// request http api
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Set("Accept", "application/json")
+
+	res, err := client.Do(req)
+	if err != nil {
+		beego.Alert(err)
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	if err != nil {
+		beego.Alert(err)
 		return nil, err
 	}
 
