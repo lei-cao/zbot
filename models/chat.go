@@ -98,6 +98,7 @@ type Product struct {
 func getTop(r *Reply) string {
 	var urlObj *url.URL
 	topUrl := fmt.Sprintf("https://api.zalora.sg/v1/products/?limit=3&query=%s", r.Key)
+	fmt.Println(topUrl)
 	urlObj, err := url.Parse(topUrl)
 	if err != nil {
 	}
@@ -119,7 +120,6 @@ func getTop(r *Reply) string {
 	if data, ok := result["data"].(map[string]interface{}); ok {
 		if products, ok := data["products"].([]interface{}); ok {
 			for _, pM := range products {
-				pretty.Println(pM)
 				if _, ok := pM.(map[string]interface{}); ok {
 					b, err := json.Marshal(pM)
 					if err != nil {
