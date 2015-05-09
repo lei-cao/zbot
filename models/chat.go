@@ -31,25 +31,30 @@ func (this *Chat) TestChatWithBot() {
 }
 
 type ChatBot struct {
-	Status    string   `json:"status"`
-	Responses []*Reply `json:"responses"`
+	Status    string        `json:"status"`
+	Responses []interface{} `json:"responses"`
 }
 
 func (this *Chat) ChatWithBot() error {
 	r := &Reply{}
 	r.Key = "shoes"
-	getTop(r)
 	// TODO call bot
-	answer := []byte(`{ "status": "ok", "responses": [{"type": "top","value": "If you are not 100% satisfied with your purchase, you can return your item to us for a full refund. Returns must be done within 30 days of receipt together with the Returns slip at a SingPost's counter or POPStation, un-used with tags on, in original packaging and must not fall under the list of non-refundable brands/items <a href=\"http://www.zalora.sg/faq-non-refundable/\">HERE</a>.\n\nFor more information regarding the Return policy, please view the steps <a href=\"http://www.zalora.sg/faq-returns/\">HERE</a>"}], "sessionid": 50510 }`)
+	answer := []byte(`{ "status": "ok", "responses": [{"type": "top","key":"shoes","value": "If you are not 100% satisfied with your purchase, you can return your item to us for a full refund. Returns must be done within 30 days of receipt together with the Returns slip at a SingPost's counter or POPStation, un-used with tags on, in original packaging and must not fall under the list of non-refundable brands/items <a href=\"http://www.zalora.sg/faq-non-refundable/\">HERE</a>.\n\nFor more information regarding the Return policy, please view the steps <a href=\"http://www.zalora.sg/faq-returns/\">HERE</a>"}], "sessionid": 50510 }`)
 	chatBot := &ChatBot{}
-	reply := &Reply{}
 	err := json.Unmarshal(answer, chatBot)
 	if err != nil {
 		beego.Alert(err)
 		return errors.New("Bot didn't reply: " + err.Error())
 	}
+	reply := &Reply{}
 	if len(chatBot.Responses) == 1 {
-		reply = chatBot.Responses[0]
+		replyInterface := chatBot.Responses[0]
+		if replyMap, ok := replyInterface.(map[string]interface{}); ok {
+			reply.Type = replyMap["type"].(string)
+			reply.Value = replyMap["value"].(string)
+		} else if replyStr, ok := replyInterface.(string); ok {
+			reply.Value = replyStr
+		}
 	}
 	reply.SetValue()
 	this.Reply = reply
@@ -92,7 +97,7 @@ type Product struct {
 
 func getTop(r *Reply) string {
 	var urlObj *url.URL
-	topUrl := fmt.Sprintf("https://api.zalora.sg/v1/products/?query=%s")
+	topUrl := fmt.Sprintf("https://api.zalora.sg/v1/products/?limit=3&query=%s", r.Key)
 	urlObj, err := url.Parse(topUrl)
 	if err != nil {
 	}
