@@ -139,16 +139,16 @@ type Product struct {
 
 func getTop(r *Reply) string {
 	var urlObj *url.URL
-	topUrl := fmt.Sprintf("https://api.zalora.sg/v1/products/?limit=3&query=%s", r.Key)
-	if r.Key == "" {
-		topUrl = "https://api.zalora.sg/v1/products/?limit=3"
-	}
+	topUrl := "https://api.zalora.sg/v1/products/"
 	fmt.Println(topUrl)
 	urlObj, err := url.Parse(topUrl)
 	if err != nil {
 	}
 	parameters := url.Values{}
-	parameters.Add("query", r.Key)
+	if r.Key != "" {
+		parameters.Add("query", r.Key)
+	}
+	parameters.Add("limit", "3")
 	urlObj.RawQuery = parameters.Encode()
 
 	res, err := GetThrift(urlObj.String())
