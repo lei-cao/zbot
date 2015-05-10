@@ -13,12 +13,16 @@ type ChatController struct {
 // @Title Get
 // @Description chat with my bot
 // @Param	msg		query 	string	true		"the chat msg user sent"
+// @Param	testing		query 	string	false		"for testing"
+// @Param	type		query 	string	false		"the type for testing"
 // @Success 200 {object} models.Object
 // @Failure 403 :objectId is empty
 // @router / [get]
 func (this *ChatController) Get() {
 	msg := this.GetString("msg")
-	chat, err := models.Say(msg)
+    testing, _ := this.GetBool("testing")
+    typeOfTest := this.GetString("type")
+	chat, err := models.Say(msg, testing, typeOfTest)
 	if err != nil {
 		this.Data["json"] = map[string]interface{}{"message": err}
 	} else {

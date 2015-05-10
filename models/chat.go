@@ -35,13 +35,30 @@ type ChatBot struct {
 	Responses []interface{} `json:"responses"`
 }
 
-func (this *Chat) ChatWithBot() error {
-	r := &Reply{}
-	r.Key = "shoes"
-	// TODO call bot
-	answer := []byte(`{ "status": "ok", "responses": [{"type": "top","key":"shoes","value": "If you are not 100% satisfied with your purchase, you can return your item to us for a full refund. Returns must be done within 30 days of receipt together with the Returns slip at a SingPost's counter or POPStation, un-used with tags on, in original packaging and must not fall under the list of non-refundable brands/items <a href=\"http://www.zalora.sg/faq-non-refundable/\">HERE</a>.\n\nFor more information regarding the Return policy, please view the steps <a href=\"http://www.zalora.sg/faq-returns/\">HERE</a>"}], "sessionid": 50510 }`)
+func (this *Chat) testingChat() []byte {
+	switch this.Reply.Type {
+	case "q":
+		return []byte(`{ "status": "ok", "responses": [{"type": "q","value": "shoes"}], "sessionid": 50510 }`)
+	case "top":
+		return []byte(`{ "status": "ok", "responses": ["{\n      \"type\": \"top\",\n      \"key\": \"nike\"\n    }"], "sessionid": 50624 }`)
+	case "raw":
+		return []byte(`{ "status": "ok", "responses": [{"type": "raw","value": "If you are not 100% satisfied with your purchase, you can return your item to us for a full refund. Returns must be done within 30 days of receipt together with the Returns slip at a SingPost's counter or POPStation, un-used with tags on, in original packaging and must not fall under the list of non-refundable brands/items <a href=\"http://www.zalora.sg/faq-non-refundable/\">HERE</a>.\n\nFor more information regarding the Return policy, please view the steps <a href=\"http://www.zalora.sg/faq-returns/\">HERE</a>"}], "sessionid": 50510 }`)
+	}
+	return []byte(`{ "status": "ok", "responses": ["{\n      \"type\": \"top\",\n      \"key\": \"nike\"\n    }"], "sessionid": 50624 }`)
+}
+
+func (this *Chat) ChatWithBot(testing bool) error {
+	answer := []byte{}
+	fmt.Println(testing)
+	if testing {
+		answer = this.testingChat()
+	} else {
+		answer = SendChat(this.Msg)
+	}
+	fmt.Println(string(answer))
 	chatBot := &ChatBot{}
 	err := json.Unmarshal(answer, chatBot)
+	fmt.Println(chatBot)
 	if err != nil {
 		beego.Alert(err)
 		return errors.New("Bot didn't reply: " + err.Error())
@@ -49,11 +66,36 @@ func (this *Chat) ChatWithBot() error {
 	reply := &Reply{}
 	if len(chatBot.Responses) == 1 {
 		replyInterface := chatBot.Responses[0]
+		//		pretty.Println("xxx")
+		//		pretty.Println(replyInterface)
+		//		pretty.Println("xxx")
 		if replyMap, ok := replyInterface.(map[string]interface{}); ok {
-			reply.Type = replyMap["type"].(string)
-			reply.Value = replyMap["value"].(string)
+			//			pretty.Println("yyy")
+			//			pretty.Println(replyMap)
+			//			pretty.Println("yyy")
+			if t, ok := replyMap["type"]; ok {
+				reply.Type = t.(string)
+			}
+			if k, ok := replyMap["key"]; ok {
+				reply.Key = k.(string)
+			}
+			if v, ok := replyMap["value"]; ok {
+				reply.Value = v.(string)
+			}
 		} else if replyStr, ok := replyInterface.(string); ok {
-			reply.Value = replyStr
+			err := json.Unmarshal([]byte(replyStr), reply)
+			if err != nil {
+				//				pretty.Println("HAH")
+				//				pretty.Println(err)
+				//				pretty.Println(reply)
+				//				pretty.Println("HAH")
+				reply.Value = replyStr
+			} else {
+				//				pretty.Println("FK")
+				//				pretty.Println(replyStr)
+				//				pretty.Println(reply)
+				//				pretty.Println("FK")
+			}
 		}
 	}
 	reply.SetValue()
@@ -76,9 +118,9 @@ func (this *Reply) SetValue() {
 	}
 }
 
-func Say(msg string) (*Chat, error) {
-	chat := &Chat{Msg: msg}
-	err := chat.ChatWithBot()
+func Say(msg string, testing bool, typeOfTest string) (*Chat, error) {
+	chat := &Chat{Msg: msg, Reply: &Reply{Type: typeOfTest}}
+	err := chat.ChatWithBot(testing)
 	if err != nil {
 		return nil, err
 	}
@@ -97,10 +139,10 @@ type Product struct {
 
 func getTop(r *Reply) string {
 	var urlObj *url.URL
-    topUrl := fmt.Sprintf("https://api.zalora.sg/v1/products/?limit=3&query=%s", r.Key)
-    if r.Key == "" {
-        topUrl = "https://api.zalora.sg/v1/products/?limit=3"
-    }
+	topUrl := fmt.Sprintf("https://api.zalora.sg/v1/products/?limit=3&query=%s", r.Key)
+	if r.Key == "" {
+		topUrl = "https://api.zalora.sg/v1/products/?limit=3"
+	}
 	fmt.Println(topUrl)
 	urlObj, err := url.Parse(topUrl)
 	if err != nil {

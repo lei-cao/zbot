@@ -24,7 +24,7 @@ func GetBot() ([]byte, error) {
 	return Get(botUri)
 }
 
-func SendChat(msg string) {
+func SendChat(msg string) []byte {
 	var urlObj *url.URL
 	chatUri := fmt.Sprintf("%s/talk/%s/%s", PANDORABOTS_API, BOT_ID, BOTNAME)
 	urlObj, err := url.Parse(chatUri)
@@ -37,7 +37,11 @@ func SendChat(msg string) {
 
 	//    https://aiaas.pandorabots.com/talk/APP_ID/BOTNAME?user_key=USER_KEY&input=INPUT
 	pretty.Println(urlObj.String())
-	Post(urlObj.String())
+	b, err := Post(urlObj.String())
+	if err != nil {
+		return []byte("")
+	}
+	return b
 }
 
 func Post(u string) ([]byte, error) {
